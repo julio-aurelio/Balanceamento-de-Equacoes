@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balanceamento de Equações - TCC Química</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' font-size='80' text-anchor='middle' dy='.35em' fill='%238B5CF6'%3E⚛️%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 9c20 0 36 18 36 41S70 91 50 91 14 73 14 50 30 9 50 9Zm0 16a25 25 0 1 0 0 50 25 25 0 0 0 0-50Zm0 15a10 10 0 1 1 0 20 10 10 0 0 1 0-20Z' fill='%238B5CF6'/%3E%3C/svg%3E">
     <script type="importmap">
         { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
     </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -66,8 +67,8 @@
             <p class="text-xs text-gray-500">PubChem API | Moléculas 3D | Cores CPK</p>
         </div>
         <nav class="ml-auto flex gap-2">
-            <button data-acao="tutorial" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition btn-3d-cinza">❓ Como jogar</button>
-            <button data-acao="niveis" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition btn-3d-cinza">🎯 Níveis</button>
+            <button data-acao="tutorial" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition btn-3d-cinza inline-flex items-center gap-2"><i data-lucide="circle-help" class="w-4 h-4"></i>Como jogar</button>
+            <button data-acao="niveis" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition btn-3d-cinza inline-flex items-center gap-2"><i data-lucide="target" class="w-4 h-4"></i>Níveis</button>
         </nav>
     </header>
 
@@ -103,7 +104,7 @@
         <!-- Contagem de átomos -->
         <div id="contagemBox" class="mt-5 pt-4 border-t border-gray-200">
             <div class="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-2">
-                <span>⚖️</span> CONTAGEM DE ÁTOMOS
+                <i data-lucide="scale" class="w-4 h-4"></i> CONTAGEM DE ÁTOMOS
                 <span class="text-[10px] text-gray-400">barra roxa = reagentes • barra azul = produtos</span>
             </div>
             <div id="contagem" class="flex flex-wrap justify-center gap-3"></div>

@@ -16,12 +16,18 @@ const PASSOS = [
 
 const NIVEIS = [
     ['H2 + Cl2 -> 2 HCl', '2 Na + Cl2 -> 2 NaCl', 'N2 + 3 H2 -> 2 NH3', '2 H2O2 -> 2 H2O + O2',
-     'C + O2 -> CO2', '2 Mg + O2 -> 2 MgO', '2 CO + O2 -> 2 CO2', '2 H2 + O2 -> 2 H2O'],
+     'C + O2 -> CO2', '2 Mg + O2 -> 2 MgO', '2 CO + O2 -> 2 CO2', '2 H2 + O2 -> 2 H2O',
+     '2 H2O -> 2 H2 + O2', 'N2 + O2 -> 2 NO', '2 SO3 -> 2 SO2 + O2', '2 K + Cl2 -> 2 KCl',
+     'CaCO3 -> CaO + CO2', '2 NaHCO3 -> Na2CO3 + CO2 + H2O'],
     ['CH4 + 2 O2 -> CO2 + 2 H2O', 'C3H8 + 5 O2 -> 3 CO2 + 4 H2O', '2 SO2 + O2 -> 2 SO3',
-     '2 KClO3 -> 2 KCl + 3 O2', '4 Fe + 3 O2 -> 2 Fe2O3', '2 Al + 3 Cl2 -> 2 AlCl3', 'C2H5OH + 3 O2 -> 2 CO2 + 3 H2O'],
+     '2 KClO3 -> 2 KCl + 3 O2', '4 Fe + 3 O2 -> 2 Fe2O3', '2 Al + 3 Cl2 -> 2 AlCl3', 'C2H5OH + 3 O2 -> 2 CO2 + 3 H2O',
+     'Mg + 2 HCl -> MgCl2 + H2', 'Fe + 2 HCl -> FeCl2 + H2', '4 Al + 3 O2 -> 2 Al2O3',
+     '3 Fe + 2 O2 -> Fe3O4', '2 NaOH + H2SO4 -> Na2SO4 + 2 H2O', '2 CO2 -> 2 CO + O2'],
     ['2 C2H6 + 7 O2 -> 4 CO2 + 6 H2O', '4 NH3 + 5 O2 -> 4 NO + 6 H2O', '4 NH3 + 3 O2 -> 2 N2 + 6 H2O',
      'C6H12O6 + 6 O2 -> 6 CO2 + 6 H2O', 'Fe2O3 + 3 CO -> 2 Fe + 3 CO2', 'C2H4 + 3 O2 -> 2 CO2 + 2 H2O',
-     '2 C2H2 + 5 O2 -> 4 CO2 + 2 H2O'],
+     '2 C2H2 + 5 O2 -> 4 CO2 + 2 H2O', '4 HCl + O2 -> 2 Cl2 + 2 H2O',
+     '2 Al + 6 HCl -> 2 AlCl3 + 3 H2', '2 FeCl3 + 3 H2 -> 2 Fe + 6 HCl',
+     '2 Na + 2 H2O -> 2 NaOH + H2', 'CaCO3 -> CaO + CO2', '2 H2SO4 -> 2 SO2 + O2 + 2 H2O'],
 ];
 
 // [nome em português, nome em inglês usado para buscar no PubChem]
@@ -36,13 +42,19 @@ const NOMES = {
     KClO3: ['clorato de potássio', 'potassium chlorate'], KCl: ['cloreto de potássio', 'potassium chloride'],
     C2H5OH: ['etanol', 'ethanol'], NO: ['monóxido de nitrogênio', 'nitric oxide'], C6H12O6: ['glicose', 'glucose'],
     Al: ['alumínio', 'aluminum'], AlCl3: ['cloreto de alumínio', 'aluminum chloride'], C2H4: ['eteno', 'ethylene'],
-    C2H2: ['acetileno', 'acetylene'],
+    C2H2: ['acetileno', 'acetylene'], K: ['potássio', 'potassium'], Ca: ['cálcio', 'calcium'],
+    CaCO3: ['carbonato de cálcio', 'calcium carbonate'], CaO: ['óxido de cálcio', 'calcium oxide'],
+    NaHCO3: ['bicarbonato de sódio', 'sodium bicarbonate'], Na2CO3: ['carbonato de sódio', 'sodium carbonate'],
+    MgCl2: ['cloreto de magnésio', 'magnesium chloride'], FeCl2: ['cloreto de ferro II', 'iron dichloride'],
+    Al2O3: ['óxido de alumínio', 'aluminum oxide'], Fe3O4: ['óxido de ferro II e III', 'iron tetroxide'],
+    NaOH: ['hidróxido de sódio', 'sodium hydroxide'], H2SO4: ['ácido sulfúrico', 'sulfuric acid'],
+    Na2SO4: ['sulfato de sódio', 'sodium sulfate'], FeCl3: ['cloreto de ferro III', 'iron trichloride'],
 };
 
 // Cores CPK (mesmas do visualizador 3D do TCC)
 const CORES = {
     C: 0x909090, H: 0xffffff, O: 0xff0d0d, N: 0x3050f8, S: 0xffcc33, Cl: 0x1ff01f,
-    Na: 0xab5cf2, Mg: 0x8dff66, Fe: 0xcc6600, K: 0x8f40d4, Al: 0xbfa6a6,
+    Na: 0xab5cf2, Mg: 0x8dff66, Fe: 0xcc6600, K: 0x8f40d4, Al: 0xbfa6a6, Ca: 0x3dff00,
 };
 const corCss = el => '#' + (CORES[el] ?? 0xffaa77).toString(16).padStart(6, '0');
 const MAX_COEF = 10;
@@ -144,6 +156,7 @@ function moverFantasma(html, e, cor = 'from-purple-600 to-blue-600') {
     fantasma.className = `fixed z-[70] pointer-events-none px-3 py-2 rounded-xl text-white text-lg font-bold shadow-2xl -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r ${cor} ${html ? '' : 'hidden'}`;
     if (!html) return;
     fantasma.innerHTML = html;
+    atualizarIcones();
     fantasma.style.left = e.clientX + 'px';
     fantasma.style.top = e.clientY + 'px';
 }
@@ -252,7 +265,7 @@ function criarCaixa(div, lado) {
         if (arraste.m && !travado()) {
             // arrastando uma molécula: segue o ponteiro; fora da caixa vira "remover"
             arraste.m.position.set(cam.left + px / div.clientWidth * (cam.right - cam.left), cam.top - py / div.clientHeight * (cam.top - cam.bottom), 3);
-            moverFantasma(fora ? `🗑️ − ${sub(arraste.m.userData.f)}` : null, e, 'from-red-500 to-pink-500');
+            moverFantasma(fora ? `${icone('trash-2', 'w-5 h-5')} − ${sub(arraste.m.userData.f)}` : null, e, 'from-red-500 to-pink-500');
         } else {
             // arrastando o fundo: gira todas as moléculas
             const dx = e.clientX - arraste.x, dy = e.clientY - arraste.y;
@@ -281,6 +294,8 @@ function criarCaixa(div, lado) {
 }
 
 const $ = id => document.getElementById(id);
+const icone = (nome, classe = 'w-5 h-5') => `<i data-lucide="${nome}" class="${classe}" aria-hidden="true"></i>`;
+const atualizarIcones = () => window.lucide?.createIcons();
 const caixas = [criarCaixa($('caixa0'), 0), criarCaixa($('caixa1'), 1)];
 let t0 = performance.now();
 requestAnimationFrame(function loop(t) {
@@ -296,7 +311,7 @@ const sub = f => f.replace(/(\d+)/g, '<sub>$1</sub>');
 const BTN = 'btn-3d bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-5 py-2.5 rounded-xl text-base font-semibold';
 const BTN2 = 'btn-3d-cinza bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold';
 const SETA = `<svg viewBox="0 0 100 60" class="w-12 md:w-20 drop-shadow-lg"><defs><linearGradient id="gs"><stop offset="0" stop-color="#9333ea"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><path d="M5 20h55V5l35 25-35 25V40H5z" fill="url(#gs)"/></svg>`;
-const SORRISO = `<div class="pop w-12 h-12 md:w-20 md:h-20 rounded-full bg-green-500 flex items-center justify-center text-3xl md:text-5xl shadow-lg shadow-green-500/50">😀</div>`;
+const SORRISO = `<div class="pop w-12 h-12 md:w-20 md:h-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/50">${icone('smile', 'w-7 h-7 md:w-11 md:h-11 text-white')}</div>`;
 const travado = () => estado.modo === 'jogo' && estado.jogo?.fase !== 'jogando';
 
 async function carregarEquacao(s, coefInicial) {
@@ -319,18 +334,19 @@ function desenharEquacao() {
             <div class="relative flex-1 flex items-center justify-center gap-1 md:gap-2 py-1">
                 ${i ? '<span class="absolute left-0 -translate-x-1/2 text-2xl md:text-3xl font-bold text-gray-400">+</span>' : ''}
                 <div class="flex flex-col items-center">
-                    <button data-acao="coef" data-arg="${l},${i},1" class="ctrl w-9 h-6 rounded-t-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30">▲</button>
+                    <button aria-label="Aumentar coeficiente" data-acao="coef" data-arg="${l},${i},1" class="ctrl w-9 h-6 rounded-t-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30 flex items-center justify-center">${icone('chevron-up', 'w-4 h-4')}</button>
                     <input data-l="${l}" data-i="${i}" inputmode="numeric" maxlength="2"
                         class="ctrl coef w-9 md:w-11 h-9 md:h-11 text-center text-xl md:text-2xl font-bold text-purple-700 bg-white border-2 border-purple-200 focus:border-purple-500 outline-none">
-                    <button data-acao="coef" data-arg="${l},${i},-1" class="ctrl w-9 h-6 rounded-b-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30">▼</button>
+                    <button aria-label="Diminuir coeficiente" data-acao="coef" data-arg="${l},${i},-1" class="ctrl w-9 h-6 rounded-b-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30 flex items-center justify-center">${icone('chevron-down', 'w-4 h-4')}</button>
                 </div>
                 <div data-l="${l}" data-i="${i}" title="Arraste para a caixa para adicionar"
                     class="arrastavel leading-tight px-2 py-1 rounded-xl border-2 border-dashed border-transparent hover:border-purple-300 hover:bg-purple-50 cursor-grab touch-none select-none transition">
                     <div class="text-lg md:text-3xl font-bold">${sub(m.f)}</div>
-                    <div class="text-[10px] md:text-xs text-gray-500">${NOMES[m.f][0]} <span class="text-purple-400">✋</span></div>
+                    <div class="text-[10px] md:text-xs text-gray-500 flex items-center gap-1">${NOMES[m.f][0]} ${icone('hand', 'w-3.5 h-3.5 text-purple-400')}</div>
                 </div>
             </div>`).join('');
     });
+    atualizarIcones();
 }
 
 function atualizar() {
@@ -342,7 +358,10 @@ function atualizar() {
     const r = avaliar(eq, ...coefs);
     const tutorial = estado.modo === 'tutorial';
     const feliz = tutorial ? r === 'ok' || r === 'nao-simplificada' : estado.jogo.fase === 'certo';
-    if (feliz !== estado.feliz) $('seta').innerHTML = (estado.feliz = feliz) ? SORRISO : SETA;
+    if (feliz !== estado.feliz) {
+        $('seta').innerHTML = (estado.feliz = feliz) ? SORRISO : SETA;
+        atualizarIcones();
+    }
 
     // No jogo a contagem só aparece depois de verificar (senão entrega a resposta)
     const mostrar = tutorial || travado();
@@ -376,16 +395,18 @@ function desenharContagem() {
             <div class="flex items-end gap-1">${barra(a[el] || 0, 'from-purple-600 to-purple-400')}${barra(b[el] || 0, 'from-blue-600 to-blue-400')}</div>
             <div class="mt-1 text-sm font-bold flex items-center gap-1">
                 <span class="w-4 h-4 rounded-full" style="background:radial-gradient(circle at 35% 30%, #fff, ${corCss(el)} 45%, #000 130%)"></span>
-                ${el} <span class="${ok ? 'text-green-600' : 'text-red-500'}">${ok ? '✓' : '✗'}</span>
+                ${el} <span class="${ok ? 'text-green-600' : 'text-red-500'}">${icone(ok ? 'check' : 'x', 'w-4 h-4')}</span>
             </div>
         </div>`;
     }).join('');
+    atualizarIcones();
 }
 
-function mensagem(emoji, texto, cor, botoes = '') {
+function mensagem(iconeMensagem, texto, cor, botoes = '') {
     const estilo = { cinza: 'bg-gray-100 text-gray-700', verde: 'bg-green-50 text-green-700 border border-green-200', vermelho: 'bg-red-50 text-red-700 border border-red-200' }[cor];
     $('acoes').innerHTML = `<div class="flex flex-wrap items-center justify-center gap-3 p-3 rounded-xl ${estilo}">
-        <span class="text-2xl">${emoji}</span><span class="font-semibold text-sm md:text-base">${texto}</span>${botoes}</div>`;
+        <span class="shrink-0">${icone(iconeMensagem, 'w-6 h-6')}</span><span class="font-semibold text-sm md:text-base">${texto}</span>${botoes}</div>`;
+    atualizarIcones();
 }
 
 // ===== FLUXO: tutorial -> níveis -> jogo -> fim =====
@@ -398,7 +419,8 @@ function abrirTutorial() {
     Object.assign(estado, { modo: 'tutorial', jogo: null });
     mostrarBancada(true);
     $('veu').hidden = $('falas').hidden = false;
-    $('barraTopo').innerHTML = `<span class="font-game px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm">📖 Tutorial</span>`;
+    $('barraTopo').innerHTML = `<span class="font-game px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm inline-flex items-center gap-2">${icone('book-open', 'w-4 h-4')}Tutorial</span>`;
+    atualizarIcones();
     carregarEquacao(TUTORIAL_EQ, 1);
     mostrarPasso(0);
 }
@@ -418,14 +440,15 @@ function mostrarPasso(n) {
                 <p class="revelar text-sm md:text-base text-gray-700 mt-1">${p.texto}</p>
                 <div class="flex flex-wrap items-center gap-3 mt-4">
                     <div class="flex gap-1.5">${PASSOS.map((_, k) => `<span class="h-2.5 rounded-full transition-all ${k === n ? 'w-7 bg-purple-600' : k < n ? 'w-2.5 bg-purple-300' : 'w-2.5 bg-gray-300'}"></span>`).join('')}</div>
-                    <button data-acao="pular" class="ml-auto text-sm text-gray-400 hover:text-gray-600 hover:underline">Pular tutorial ⏭</button>
+                    <button data-acao="pular" class="ml-auto text-sm text-gray-400 hover:text-gray-600 hover:underline inline-flex items-center gap-1">Pular tutorial ${icone('forward', 'w-4 h-4')}</button>
                     ${p.pronto
-                        ? '<span class="font-game text-base text-purple-600 loading">👆 Faça isso para continuar</span>'
-                        : `<button data-acao="passo" class="${BTN}">${ultimo ? '🎯 Bora jogar!' : 'Próximo ▶'}</button>`}
+                        ? `<span class="font-game text-base text-purple-600 loading inline-flex items-center gap-2">${icone('hand-pointer', 'w-5 h-5')}Faça isso para continuar</span>`
+                        : `<button data-acao="passo" class="${BTN} inline-flex items-center gap-2">${ultimo ? `${icone('target', 'w-5 h-5')}Bora jogar!` : `Próximo ${icone('chevron-right', 'w-5 h-5')}`}</button>`}
                 </div>
             </div>
         </div>`;
     if (p.confete) confete();
+    atualizarIcones();
     document.querySelectorAll('.foco').forEach(el => el.classList.remove('foco'));
     if (p.foco) document.querySelectorAll(p.foco).forEach((el, k) => {
         el.classList.add('foco');
@@ -461,6 +484,7 @@ function telaNiveis() {
                 <div class="bg-white rounded-full border border-gray-200 py-1 text-xl tracking-wider">${estrelas(Math.round(recorde(i) / 2))}</div>
             </button>`).join('')}
         </div>`;
+    atualizarIcones();
 }
 
 function iniciarJogo(nivel) {
@@ -479,7 +503,7 @@ function proximaEquacao() {
     pedirVerificacao('Balanceie a equação e clique em Verificar.');
 }
 
-const pedirVerificacao = texto => mensagem('🧪', texto, 'cinza', `<button data-acao="verificar" class="${BTN}">✔️ Verificar</button>`);
+const pedirVerificacao = texto => mensagem('flask-conical', texto, 'cinza', `<button data-acao="verificar" class="${BTN} inline-flex items-center gap-2">${icone('check', 'w-5 h-5')}Verificar</button>`);
 const relogio = () => { const s = Math.floor((Date.now() - estado.jogo.inicio) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 setInterval(() => { if (estado.jogo && $('tempo')) $('tempo').textContent = relogio(); }, 1000);
 
@@ -488,9 +512,10 @@ function barraJogo() {
     $('barraTopo').innerHTML = `
         <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold">Nível ${j.nivel + 1}</span>
         <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm">Equação <b>${j.idx + 1}</b>/5</span>
-        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm">🏆 <b>${j.pontos}</b> pts</span>
-        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm">⏱️ <b id="tempo">${relogio()}</b></span>
-        <button data-acao="niveis" class="${BTN2} ml-auto">↩ Níveis</button>`;
+        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm inline-flex items-center gap-1">${icone('trophy', 'w-4 h-4 text-yellow-600')}<b>${j.pontos}</b> pts</span>
+        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm inline-flex items-center gap-1">${icone('timer', 'w-4 h-4')}<b id="tempo">${relogio()}</b></span>
+        <button data-acao="niveis" class="${BTN2} ml-auto inline-flex items-center gap-2">${icone('corner-up-left', 'w-4 h-4')}Níveis</button>`;
+    atualizarIcones();
 }
 
 function verificar() {
@@ -501,12 +526,12 @@ function verificar() {
         j.pontos += ganhou;
         confete();
         j.fase = 'certo';
-        mensagem('😄', `Correto! +${ganhou} ponto${ganhou > 1 ? 's' : ''}`, 'verde', `<button data-acao="proxima" class="${BTN}">➡️ Próxima</button>`);
+        mensagem('smile', `Correto! +${ganhou} ponto${ganhou > 1 ? 's' : ''}`, 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
     } else {
         const motivo = { zero: 'Nenhum coeficiente pode ser zero.', 'nao-simplificada': 'Está balanceada, mas use os MENORES números possíveis.' }[r] || 'Ainda não está balanceada.';
         j.fase = 'errado';
-        mensagem(j.tentativas === 1 ? '🤔' : '😢', motivo + (j.tentativas === 1 ? ' Veja a contagem e tente de novo!' : ' Não foi dessa vez.'), 'vermelho',
-            j.tentativas === 1 ? `<button data-acao="tentar" class="${BTN}">🔁 Tentar de novo</button>` : `<button data-acao="resposta" class="${BTN}">👀 Mostrar resposta</button>`);
+        mensagem(j.tentativas === 1 ? 'circle-help' : 'frown', motivo + (j.tentativas === 1 ? ' Veja a contagem e tente de novo!' : ' Não foi dessa vez.'), 'vermelho',
+            j.tentativas === 1 ? `<button data-acao="tentar" class="${BTN} inline-flex items-center gap-2">${icone('rotate-ccw', 'w-5 h-5')}Tentar de novo</button>` : `<button data-acao="resposta" class="${BTN} inline-flex items-center gap-2">${icone('eye', 'w-5 h-5')}Mostrar resposta</button>`);
     }
     barraJogo();
     atualizar();
@@ -519,15 +544,16 @@ function fimDeJogo() {
     estado.jogo = null;
     mostrarBancada(false);
     $('telaNivel').innerHTML = `
-        <div class="text-6xl mb-3 pop">${j.pontos === 10 ? '🏆' : j.pontos >= 6 ? '🎉' : '💪'}</div>
+        <div class="mb-3 pop flex justify-center ${j.pontos === 10 ? 'text-yellow-500' : j.pontos >= 6 ? 'text-purple-600' : 'text-blue-600'}">${icone(j.pontos === 10 ? 'trophy' : j.pontos >= 6 ? 'party-popper' : 'dumbbell', 'w-16 h-16')}</div>
         <h2 class="text-2xl font-bold">Nível ${j.nivel + 1} concluído!</h2>
         <div class="text-4xl my-3 tracking-wider">${estrelas(Math.round(j.pontos / 2))}</div>
         <p class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">${j.pontos} / 10 pontos</p>
-        <p class="text-sm text-gray-500 mt-1 mb-6">⏱️ Tempo: ${tempo}</p>
+        <p class="text-sm text-gray-500 mt-1 mb-6 inline-flex items-center gap-1">${icone('timer', 'w-4 h-4')}Tempo: ${tempo}</p>
         <div class="flex justify-center gap-2">
-            <button data-acao="nivel" data-arg="${j.nivel}" class="${BTN}">🔁 Jogar de novo</button>
-            <button data-acao="niveis" class="${BTN2}">↩ Níveis</button>
+            <button data-acao="nivel" data-arg="${j.nivel}" class="${BTN} inline-flex items-center gap-2">${icone('rotate-ccw', 'w-5 h-5')}Jogar de novo</button>
+            <button data-acao="niveis" class="${BTN2} inline-flex items-center gap-2">${icone('corner-up-left', 'w-4 h-4')}Níveis</button>
         </div>`;
+    atualizarIcones();
 }
 
 // Chuva de confete ao acertar
@@ -555,7 +581,7 @@ const ACOES = {
         estado.coefs = estado.eq.map(l => l.map(m => m.resposta));
         estado.jogo.fase = 'resposta';
         atualizar();
-        mensagem('✅', 'Esta é a resposta certa. Confira a contagem!', 'verde', `<button data-acao="proxima" class="${BTN}">➡️ Próxima</button>`);
+        mensagem('badge-check', 'Esta é a resposta certa. Confira a contagem!', 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
     },
     proxima: () => { estado.jogo.idx++; proximaEquacao(); },
     coef: arg => mudarCoef(...arg.split(',').map(Number)),
@@ -603,3 +629,4 @@ $('bancada').addEventListener('input', e => {
 $('bancada').addEventListener('focusout', e => e.target.classList.contains('coef') && atualizar());
 
 abrirTutorial();
+atualizarIcones();
