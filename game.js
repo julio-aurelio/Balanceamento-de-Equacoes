@@ -6,12 +6,12 @@ const TUTORIAL_EQ = '2 H2 + O2 -> 2 H2O';
 
 // Passos do tutorial. "foco" = o que piscar na tela; "pronto" = ação que o aluno precisa fazer para avançar.
 const PASSOS = [
-    { titulo: '👋 Bem-vindo!', texto: 'Numa reação química os átomos <b>não somem nem aparecem</b>, só se reorganizam (Lei de Lavoisier). Seu desafio é <b>balancear</b> a equação: deixar o mesmo número de cada átomo dos dois lados.' },
-    { titulo: '🔬 As caixas', foco: '.caixa', texto: 'À esquerda ficam os <b>reagentes</b> (o que reage) e à direita os <b>produtos</b> (o que se forma). <b>Arraste o fundo</b> de uma caixa para girar as moléculas e passe o mouse numa molécula para ver o nome.' },
-    { titulo: '✋ Adicione hidrogênio', foco: '.arrastavel[data-l="0"][data-i="0"], #caixa0', pronto: c => c[0][0] >= 2, texto: 'Segure o <b>H₂</b> que está brilhando e <b>arraste para dentro da caixa de reagentes</b>. Precisamos de <b>2</b> moléculas de H₂!' },
-    { titulo: '💧 Agora a água', foco: '.arrastavel[data-l="1"][data-i="0"], #caixa1', pronto: (c, r) => r === 'ok', texto: 'Agora sobram átomos de H e O nos reagentes. <b>Arraste mais uma H₂O</b> para a caixa de produtos para balancear!' },
-    { titulo: '🎉 Balanceou!', foco: '#contagemBox, #seta', confete: true, texto: 'A seta virou 😀 e a contagem ficou toda <b>verde</b>: 4 H e 2 O de cada lado. Para <b>tirar</b> uma molécula, é só arrastá-la para fora da caixa (ou usar o ▼).' },
-    { titulo: '🎮 Agora é com você', texto: 'Cada nível tem <b>5 equações</b>. Balanceie e clique em <b>Verificar</b>: acertou de primeira = 2 pontos, na segunda = 1. No jogo a contagem fica <b>escondida</b> até você verificar, e use sempre os <b>menores números</b> possíveis!' },
+    { titulo: 'Bem-vindo!', texto: 'Numa reação química os átomos <b>não somem nem aparecem</b>, só se reorganizam (Lei de Lavoisier). Seu desafio é <b>balancear</b> a equação: deixar o mesmo número de cada átomo dos dois lados.' },
+    { titulo: 'As caixas', foco: '.caixa', texto: 'À esquerda ficam os <b>reagentes</b> (o que reage) e à direita os <b>produtos</b> (o que se forma). <b>Arraste o fundo</b> de uma caixa para girar as moléculas e passe o mouse numa molécula para ver o nome.' },
+    { titulo: 'Adicione hidrogênio', foco: '.arrastavel[data-l="0"][data-i="0"], #caixa0', pronto: c => c[0][0] >= 2, texto: 'Segure o <b>H₂</b> que está brilhando e <b>arraste para dentro da caixa de reagentes</b>. Precisamos de <b>2</b> moléculas de H₂!' },
+    { titulo: 'Agora a água', foco: '.arrastavel[data-l="1"][data-i="0"], #caixa1', pronto: (c, r) => r === 'ok', texto: 'Agora sobram átomos de H e O nos reagentes. <b>Arraste mais uma H₂O</b> para a caixa de produtos para balancear!' },
+    { titulo: 'Balanceou!', foco: '#contagemBox, #seta', confete: true, texto: 'A seta virou e a contagem ficou toda <b>verde</b>: 4 H e 2 O de cada lado. Para <b>tirar</b> uma molécula, é só arrastá-la para fora da caixa (ou usar o ▼).' },
+    { titulo: 'Agora é com você', texto: 'Cada nível tem <b>5 equações</b>. Balanceie e clique em <b>Verificar</b>: acertou de primeira = 2 pontos, na segunda = 1. No jogo a contagem fica <b>escondida</b> até você verificar, e use sempre os <b>menores números</b> possíveis!' },
 ];
 
 const NIVEIS = [
@@ -351,10 +351,10 @@ function atualizar() {
 
     if (!tutorial) return;
     mensagem(...{
-        zero: ['🔢', 'Toda substância precisa de pelo menos 1 molécula.', 'cinza'],
-        desbalanceada: ['⚖️', 'Ainda não está balanceada. Compare os átomos dos dois lados!', 'cinza'],
-        'nao-simplificada': ['😊', 'Balanceada! Mas dá para usar números menores.', 'verde'],
-        ok: ['🎉', 'Equação balanceada! Nenhum átomo foi criado nem destruído (Lavoisier).', 'verde'],
+        zero: ['Toda substância precisa de pelo menos 1 molécula.', 'cinza'],
+        desbalanceada: ['Ainda não está balanceada. Compare os átomos dos dois lados!', 'cinza'],
+        'nao-simplificada': ['Balanceada! Mas dá para usar números menores.', 'verde'],
+        ok: ['Equação balanceada! Nenhum átomo foi criado nem destruído (Lavoisier).', 'verde'],
     }[r]);
     // passo do tutorial que espera uma ação: avança sozinho quando o aluno faz
     const passo = estado.passo;
