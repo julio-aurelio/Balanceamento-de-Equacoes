@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balanceamento de Equações - TCC Química</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='50' font-size='80' text-anchor='middle' dy='.35em' fill='%238B5CF6'%3E⚛️%3C/text%3E%3C/svg%3E">
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Fira+Code:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+            /* céu estrelado + brilho roxo/azul */
+            background:
+                radial-gradient(1.5px 1.5px at 12% 18%, #fff9, transparent), radial-gradient(1px 1px at 78% 12%, #fff8, transparent),
+                radial-gradient(1.5px 1.5px at 45% 70%, #fff6, transparent), radial-gradient(1px 1px at 88% 60%, #fff8, transparent),
+                radial-gradient(1px 1px at 25% 85%, #fff7, transparent), radial-gradient(1.5px 1.5px at 62% 35%, #fff5, transparent),
+                radial-gradient(circle at 15% 0%, #6d28d955, transparent 45%), radial-gradient(circle at 90% 100%, #2563eb44, transparent 45%),
+                #050510;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        /* tipografia do site Arlyze: Space Grotesk nos títulos/botões, Inter no texto, Fira Code nos números */
+        h1, h2, h3, button, .font-game { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.01em; }
+        .coef, #tempo, .font-mono { font-family: 'Fira Code', monospace; }
+        /* botões "fofinhos" que afundam ao clicar */
+        .btn-3d { box-shadow: 0 4px 0 #4c1d95; transition: transform .08s, box-shadow .08s; }
+        .btn-3d:active { transform: translateY(3px); box-shadow: 0 1px 0 #4c1d95; }
+        .btn-3d-cinza { box-shadow: 0 4px 0 #d1d5db; transition: transform .08s, box-shadow .08s; }
+        .btn-3d-cinza:active { transform: translateY(3px); box-shadow: 0 1px 0 #d1d5db; }
+        .cartao-nivel { box-shadow: 0 6px 0 #c4b5fd; }
+        .cartao-nivel:active { transform: translateY(4px); box-shadow: 0 2px 0 #c4b5fd; }
+        .flutuar { animation: flutuar 2.4s ease-in-out infinite; }
+        @keyframes flutuar { 50% { transform: translateY(-8px) rotate(-4deg); } }
+        .revelar { animation: revelar .7s steps(28) both; }
+        @keyframes revelar { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+        .confete { position: fixed; top: -14px; width: 9px; height: 14px; border-radius: 2px; z-index: 80; pointer-events: none; animation: cair linear forwards; }
+        @keyframes cair { to { transform: translateY(105vh) rotate(720deg); } }
+        .loading { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .pop { animation: pop .35s cubic-bezier(.3, 1.6, .5, 1); }
+        @keyframes pop { 0% { transform: scale(.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .barra { transition: height .3s ease; }
+        /* o que o tutorial está apontando */
+        /* fica por cima do véu do tutorial, brilhando, e é a única coisa clicável */
+        .foco { position: relative; z-index: 50; outline: 4px solid #facc15; outline-offset: 4px; border-radius: 1rem; animation: brilho 1.2s ease-in-out infinite; }
+        .foco:not(.caixa) { background: #fff; }
+        @keyframes brilho { 50% { outline-color: rgba(250, 204, 21, .2); } }
+        .caixa canvas { display: block; width: 100% !important; height: 100% !important; }
+        /* esfera "3D" em CSS para os cartões de nível */
+        .bola { position: absolute; border-radius: 50%; box-shadow: inset -4px -6px 10px rgba(0,0,0,.35); }
+    </style>
+</head>
+<body class="text-gray-800 p-3 md:p-6">
+<div class="max-w-6xl mx-auto space-y-4">
+
+    <!-- Cabeçalho -->
+    <header class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 p-4 md:p-5 flex flex-wrap items-center gap-3">
+        <img src="arly.png" alt="Arly" class="w-14 h-14 shrink-0 object-contain drop-shadow-md">
+        <div>
+            <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Balanceamento de Equações</h1>
+            <p class="text-xs text-gray-500">PubChem API | Moléculas 3D | Cores CPK</p>
+        </div>
+        <nav class="ml-auto flex gap-2">
+            <button data-acao="tutorial" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition btn-3d-cinza">❓ Como jogar</button>
+            <button data-acao="niveis" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold transition btn-3d-cinza">🎯 Níveis</button>
+        </nav>
+    </header>
+
+    <!-- Seleção de nível / fim de jogo -->
+    <section id="telaNivel" hidden class="bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-6 md:p-10 text-center"></section>
+
+    <!-- Bancada (intro e jogo) -->
+    <section id="bancada" class="bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-4 md:p-6">
+        <div id="barraTopo" class="flex flex-wrap items-center gap-2 mb-4"></div>
+
+
+        <div>
+            <div class="grid grid-cols-[1fr_3.5rem_1fr] md:grid-cols-[1fr_6rem_1fr] gap-y-3 items-center">
+                <!-- Caixas 3D -->
+                <div class="caixa relative h-64 md:h-80 bg-[#050510] rounded-2xl border-2 border-purple-500/40 shadow-inner overflow-hidden" id="caixa0">
+                    <span class="absolute top-2 left-3 text-xs font-semibold text-purple-200/80 z-10 pointer-events-none">REAGENTES</span>
+                </div>
+                <div id="seta" class="flex justify-center"></div>
+                <div class="caixa relative h-64 md:h-80 bg-[#050510] rounded-2xl border-2 border-blue-500/40 shadow-inner overflow-hidden" id="caixa1">
+                    <span class="absolute top-2 left-3 text-xs font-semibold text-blue-200/80 z-10 pointer-events-none">PRODUTOS</span>
+                </div>
+
+                <!-- Equação com os seletores, alinhada embaixo das caixas -->
+                <div id="lado0" class="flex"></div>
+                <div class="text-center text-3xl md:text-4xl font-bold text-purple-600">→</div>
+                <div id="lado1" class="flex"></div>
+            </div>
+        </div>
+
+        <!-- Mensagem / botões (verificar, tentar de novo, próxima...) -->
+        <div id="acoes" class="mt-5"></div>
+
+        <!-- Contagem de átomos -->
+        <div id="contagemBox" class="mt-5 pt-4 border-t border-gray-200">
+            <div class="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-2">
+                <span>⚖️</span> CONTAGEM DE ÁTOMOS
+                <span class="text-[10px] text-gray-400">barra roxa = reagentes • barra azul = produtos</span>
+            </div>
+            <div id="contagem" class="flex flex-wrap justify-center gap-3"></div>
+        </div>
+    </section>
+
+    <p class="text-center text-[10px] text-gray-400">🔬 Powered by PubChem API</p>
+</div>
+
+<!-- Tutorial: véu com blur (bloqueia cliques) + caixa de fala do personagem -->
+<div id="veu" hidden class="fixed inset-0 z-40 bg-[#050510]/60 backdrop-blur-sm"></div>
+<div id="falas" hidden class="fixed inset-x-0 top-3 md:top-6 z-[60] px-3"></div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
