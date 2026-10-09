@@ -34,8 +34,13 @@ def molecula(nome):
         z = conf.get('z', [0] * len(conf['x']))
         atomos = [[SIMBOLOS[e] if e < len(SIMBOLOS) else '?', x, y, zz]
                   for e, x, y, zz in zip(c['atoms']['element'], conf['x'], conf['y'], z)]
+        bonds = c.get('bonds', {})
+        # PubChem numera átomos a partir de 1; JavaScript usa índices a partir de 0.
+        ligacoes = [[a - 1, b - 1, ordem]
+                    for a, b, ordem in zip(bonds.get('aid1', []), bonds.get('aid2', []), bonds.get('order', []))]
         return {'cid': props['CID'], 'formula': props['MolecularFormula'],
-                'massa': float(props['MolecularWeight']), 'tipo': tipo, 'atomos': atomos}
+                'massa': float(props['MolecularWeight']), 'tipo': tipo,
+                'atomos': atomos, 'ligacoes': ligacoes}
     raise LookupError('sem coordenadas para ' + nome)
 
 

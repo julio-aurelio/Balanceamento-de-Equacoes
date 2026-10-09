@@ -107,19 +107,23 @@ function avaliar([esq, dir], cEsq, cDir) {
 
 // ===== PUBCHEM -> MODELO 3D =====
 const esfera = new THREE.SphereGeometry(1, 32, 24);
+const barraLigacao = new THREE.CylinderGeometry(.075, .075, 1, 12);
 const materiais = {};
 const material = el => materiais[el] ??= new THREE.MeshPhongMaterial({ color: CORES[el] ?? 0xffaa77, shininess: 90, specular: 0x444444 });
+const materialLigacao = new THREE.MeshPhongMaterial({ color: 0xd1d5db, shininess: 70, specular: 0x555555 });
 const assinatura = c => JSON.stringify(Object.entries(c).sort());
 
 // Usa as coordenadas do PubChem; se faltar (sem internet / sem registro) monta um aglomerado simples.
-function posicoes(f, dados) {
-    if (dados?.atomos && assinatura(contarAtomos(dados.atomos.map(a => a[0]).join(''))) === assinatura(contarAtomos(f))) return dados.atomos;
+function geometria(f, dados) {
+    if (dados?.atomos && assinatura(contarAtomos(dados.atomos.map(a => a[0]).join(''))) === assinatura(contarAtomos(f))) {
+        return { atomos: dados.atomos, ligacoes: dados.ligacoes || [] };
+    }
     const els = Object.entries(contarAtomos(f)).flatMap(([el, n]) => Array(n).fill(el));
-    return els.map((el, i) => i ? [el, Math.cos(2 * Math.PI * i / (els.length - 1)), Math.sin(2 * Math.PI * i / (els.length - 1)), 0] : [el, 0, 0, 0]);
+    return { atomos: els.map((el, i) => i ? [el, Math.cos(2 * Math.PI * i / (els.length - 1)), Math.sin(2 * Math.PI * i / (els.length - 1)), 0] : [el, 0, 0, 0]), ligacoes: [] };
 }
 
 // Modelo "space-filling" (esferas encostadas, como no PhET), normalizado para caber num diâmetro 1
-function criarModelo(atomos) {
+function criarModelo({ atomos, ligacoes }) {
     const c = [1, 2, 3].map(k => atomos.reduce((s, a) => s + a[k], 0) / atomos.length);
     let d = Infinity;
     for (let i = 0; i < atomos.length; i++) for (let j = i + 1; j < atomos.length; j++) {
@@ -128,6 +132,26 @@ function criarModelo(atomos) {
     }
     if (!isFinite(d)) d = 1;
     const interno = new THREE.Group();
+    const pontos = atomos.map(([, ...p]) => new THREE.Vector3(...p.map((v, k) => (v - c[k]) / d)));
+    const eixoY = new THREE.Vector3(0, 1, 0);
+    for (const [a, b, ordem] of ligacoes) {
+        if (!pontos[a] || !pontos[b]) continue;
+        const inicio = pontos[a], fim = pontos[b];
+        const direcao = new THREE.Vector3().subVectors(fim, inicio);
+        const comprimento = direcao.length();
+        if (comprimento < .01) continue;
+        direcao.normalize();
+        const referencia = Math.abs(direcao.y) < .9 ? eixoY : new THREE.Vector3(1, 0, 0);
+        const perpendicular = new THREE.Vector3().crossVectors(direcao, referencia).normalize();
+        const quantidade = Math.max(1, Math.min(3, Math.round(ordem)));
+        for (let n = 0; n < quantidade; n++) {
+            const barra = new THREE.Mesh(barraLigacao, materialLigacao);
+            barra.position.copy(inicio).add(fim).multiplyScalar(.5).addScaledVector(perpendicular, (n - (quantidade - 1) / 2) * .18);
+            barra.quaternion.setFromUnitVectors(eixoY, direcao);
+            barra.scale.y = comprimento;
+            interno.add(barra);
+        }
+    }
     let R = 1.3; // átomo isolado não fica gigante
     for (const [el, ...p] of atomos) {
         const m = new THREE.Mesh(esfera, material(el));
@@ -146,7 +170,7 @@ function criarModelo(atomos) {
 const cachePubchem = {}, cacheModelo = {};
 const buscarPubchem = f => cachePubchem[f] ??= fetch('/api/molecule/' + encodeURIComponent(NOMES[f]?.[1] || f))
     .then(r => r.ok ? r.json() : null).catch(() => null);
-const modeloDe = f => cacheModelo[f] ??= buscarPubchem(f).then(d => criarModelo(posicoes(f, d)));
+const modeloDe = f => cacheModelo[f] ??= buscarPubchem(f).then(d => criarModelo(geometria(f, d)));
 
 // ===== CAIXAS 3D =====
 // Elemento que segue o dedo/mouse enquanto arrasta uma molécula
