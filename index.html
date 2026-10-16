@@ -29,6 +29,7 @@
         h1, h2, h3, button, .font-game { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.01em; }
         .coef, #tempo, .font-mono { font-family: 'Fira Code', monospace; }
         /* botões "fofinhos" que afundam ao clicar */
+        [hidden] { display: none !important; } /* senão classes como "flex" mostram o que está escondido */
         .btn-3d { box-shadow: 0 4px 0 #4c1d95; transition: transform .08s, box-shadow .08s; }
         .btn-3d:active { transform: translateY(3px); box-shadow: 0 1px 0 #4c1d95; }
         .btn-3d-cinza { box-shadow: 0 4px 0 #d1d5db; transition: transform .08s, box-shadow .08s; }

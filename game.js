@@ -575,7 +575,6 @@ function telaNiveis() {
                 <div class="font-bold text-base md:text-lg">Nível ${i + 1}</div>
                 <div class="text-xs text-gray-500 mb-1 md:mb-3">${nome}</div>
                 <div class="relative w-24 h-20 mx-auto mb-2 md:mb-3 scale-75 md:scale-100 group-hover:scale-110 transition">${ICONES[i]}</div>
-                <div class="bg-white rounded-full border border-gray-200 py-1 text-sm md:text-xl tracking-wider">${estrelas(Math.round(recorde(i) / 2))}</div>
             </button>`).join('')}
         </div>`;
     atualizarIcones();
@@ -591,13 +590,14 @@ function iniciarJogo(nivel) {
 function proximaEquacao() {
     const j = estado.jogo;
     if (j.idx >= j.fila.length) return fimDeJogo();
-    Object.assign(j, { tentativas: 0, fase: 'jogando' });
+    Object.assign(j, { tentativas: 0, usouDica: false, fase: 'jogando' });
     barraJogo();
     carregarEquacao(j.fila[j.idx], 0);
     pedirVerificacao('Deixe o <b>mesmo número de cada átomo</b> dos dois lados e clique em Verificar.');
 }
 
-const pedirVerificacao = texto => mensagem('flask-conical', texto, 'cinza', `<button data-acao="verificar" class="${BTN} inline-flex items-center gap-2">${icone('check', 'w-5 h-5')}Verificar</button>`);
+const BOTAO_DICA = () => `<button data-acao="dica" class="${BTN2} inline-flex items-center gap-2">${icone('lightbulb', 'w-4 h-4')}Dica</button>`;
+const pedirVerificacao = (texto, cor = 'cinza', iconeMsg = 'flask-conical') => mensagem(iconeMsg, texto, cor, `<button data-acao="verificar" class="${BTN} inline-flex items-center gap-2">${icone('check', 'w-5 h-5')}Verificar</button>${BOTAO_DICA()}`);
 const relogio = () => { const s = Math.floor((Date.now() - estado.jogo.inicio) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 setInterval(() => { if (estado.jogo && $('tempo')) $('tempo').textContent = relogio(); }, 1000);
 
@@ -616,16 +616,17 @@ function verificar() {
     const j = estado.jogo, r = avaliar(estado.eq, ...estado.coefs);
     j.tentativas++;
     if (r === 'ok') {
-        const ganhou = j.tentativas === 1 ? 2 : 1;
+        // 2 pontos de primeira, 1 na segunda (ou de primeira com dica), 0 depois disso
+        const ganhou = Math.max(0, 3 - j.tentativas - (j.usouDica ? 1 : 0));
         j.pontos += ganhou;
         confete();
         j.fase = 'certo';
-        mensagem('smile', `${j.tentativas === 1 ? 'Perfeito, de primeira!' : 'Acertou na segunda!'} <b>+${ganhou} ponto${ganhou > 1 ? 's' : ''}</b>`, 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
+        mensagem('smile', `${j.tentativas === 1 && !j.usouDica ? 'Perfeito, de primeira!' : 'Conseguiu!'} <b>+${ganhou} ponto${ganhou === 1 ? '' : 's'}</b>`, 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
     } else {
         const motivo = { zero: 'Toda substância precisa de pelo menos 1 molécula.', 'nao-simplificada': 'Está balanceada, mas dá para <b>dividir todos os números</b> e usar menores.' }[r] || 'Ainda não está balanceada. ' + diferencas();
         j.fase = 'errado';
-        mensagem(j.tentativas === 1 ? 'circle-help' : 'frown', motivo + (j.tentativas === 1 ? ' Ajuste e tente de novo!' : ' Não foi dessa vez, veja a resposta.'), 'vermelho',
-            j.tentativas === 1 ? `<button data-acao="tentar" class="${BTN} inline-flex items-center gap-2">${icone('rotate-ccw', 'w-5 h-5')}Tentar de novo</button>` : `<button data-acao="resposta" class="${BTN} inline-flex items-center gap-2">${icone('eye', 'w-5 h-5')}Mostrar resposta</button>`);
+        mensagem('circle-help', motivo + ' Ajuste e tente de novo!', 'vermelho',
+            `<button data-acao="tentar" class="${BTN} inline-flex items-center gap-2">${icone('rotate-ccw', 'w-5 h-5')}Tentar de novo</button>${BOTAO_DICA()}`);
     }
     barraJogo();
     atualizar();
@@ -671,11 +672,15 @@ const ACOES = {
     niveis: telaNiveis,
     verificar,
     tentar: () => { estado.jogo.fase = 'jogando'; atualizar(); pedirVerificacao('Mude a quantidade de moléculas e verifique de novo.'); },
-    resposta: () => {
-        estado.coefs = estado.eq.map(l => l.map(m => m.resposta));
-        estado.jogo.fase = 'resposta';
+    // Dica: entrega o número certo de UMA substância que ainda está errada (o resto o aluno descobre)
+    dica: () => {
+        const j = estado.jogo;
+        const errada = estado.eq.flatMap((l, li) => l.map((m, i) => ({ m, atual: estado.coefs[li][i] }))).find(x => x.atual !== x.m.resposta);
+        if (!errada) return;
+        j.usouDica = true;
+        j.fase = 'jogando';
         atualizar();
-        mensagem('badge-check', 'Esta é a resposta certa. Repare que cada átomo aparece igual nos dois lados.', 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
+        pedirVerificacao(`Dica: use <b>${errada.m.resposta}</b> molécula${errada.m.resposta > 1 ? 's' : ''} de <b>${sub(errada.m.f)}</b>.`, 'cinza', 'lightbulb');
     },
     proxima: () => { estado.jogo.idx++; proximaEquacao(); },
     coef: arg => mudarCoef(...arg.split(',').map(Number)),
