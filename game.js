@@ -107,7 +107,7 @@ function avaliar([esq, dir], cEsq, cDir) {
 
 // ===== PUBCHEM -> MODELO 3D =====
 const esfera = new THREE.SphereGeometry(1, 32, 24);
-const barraLigacao = new THREE.CylinderGeometry(.075, .075, 1, 12);
+const barraLigacao = new THREE.CylinderGeometry(.06, .06, 1, 12);
 const materiais = {};
 const material = el => materiais[el] ??= new THREE.MeshPhongMaterial({ color: CORES[el] ?? 0xffaa77, shininess: 90, specular: 0x444444 });
 const materialLigacao = new THREE.MeshPhongMaterial({ color: 0xd1d5db, shininess: 70, specular: 0x555555 });
@@ -169,7 +169,7 @@ function criarModelo({ atomos, ligacoes }) {
         const quantidade = Math.max(1, Math.min(3, Math.round(ordem)));
         for (let n = 0; n < quantidade; n++) {
             const barra = new THREE.Mesh(barraLigacao, materialLigacao);
-            barra.position.copy(inicio).add(fim).multiplyScalar(.5).addScaledVector(perpendicular, (n - (quantidade - 1) / 2) * .18);
+            barra.position.copy(inicio).add(fim).multiplyScalar(.5).addScaledVector(perpendicular, (n - (quantidade - 1) / 2) * .14);
             barra.quaternion.setFromUnitVectors(eixoY, direcao);
             barra.scale.y = comprimento;
             interno.add(barra);
@@ -179,7 +179,7 @@ function criarModelo({ atomos, ligacoes }) {
     for (const [el, ...p] of atomos) {
         const m = new THREE.Mesh(esfera, material(el));
         m.position.set(...p.map((v, k) => (v - c[k]) / d));
-        const r = el === 'H' ? .5 : .75;
+        const r = el === 'H' ? .22 : .32; // bola e vareta: esferas menores para as ligações aparecerem
         m.scale.setScalar(r);
         interno.add(m);
         R = Math.max(R, m.position.length() + r);
@@ -191,8 +191,23 @@ function criarModelo({ atomos, ligacoes }) {
 }
 
 const cachePubchem = {}, cacheModelo = {};
-const buscarPubchem = f => cachePubchem[f] ??= fetch('/api/molecule/' + encodeURIComponent(NOMES[f]?.[1] || f))
-    .then(r => r.ok ? r.json() : null).catch(() => null);
+const SIMBOLOS = 'X H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe'.split(' ');
+// Busca direto no PubChem (aceita CORS), então funciona mesmo sem o server.py. 3D quando existe; sais só têm 2D.
+async function pubchemDireto(nome) {
+    for (const tipo of ['3d', '2d']) {
+        const r = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(nome)}/JSON?record_type=${tipo}`);
+        if (!r.ok) continue;
+        const c = (await r.json()).PC_Compounds[0];
+        const { x, y, z = x.map(() => 0) } = c.coords[0].conformers[0];
+        const b = c.bonds ?? { aid1: [], aid2: [], order: [] };
+        return {
+            atomos: c.atoms.element.map((e, i) => [SIMBOLOS[e] ?? '?', x[i], y[i], z[i]]),
+            ligacoes: b.aid1.map((a, i) => [a - 1, b.aid2[i] - 1, b.order[i]]), // PubChem conta a partir de 1
+        };
+    }
+    return null;
+}
+const buscarPubchem = f => cachePubchem[f] ??= pubchemDireto(NOMES[f]?.[1] || f).catch(() => null);
 const modeloDe = f => cacheModelo[f] ??= buscarPubchem(f).then(d => criarModelo(geometria(f, d)));
 
 // ===== CAIXAS 3D =====
