@@ -1,5 +1,7 @@
 # Balanceamento de Equações Químicas
 
+![Capa do jogo](capa.png)
+
 <img src="arly.png" alt="Arly, a mascote" width="160" align="right">
 
 Jogo educativo de química, parte do TCC, em que o aluno **balanceia equações químicas** montando as moléculas em 3D. Foi inspirado na simulação [Balancing Chemical Equations do PhET Colorado](https://phet.colorado.edu/pt/simulations/balancing-chemical-equations) e segue a ideia da **Lei de Lavoisier**: nenhum átomo é criado nem destruído, só reorganizado.
