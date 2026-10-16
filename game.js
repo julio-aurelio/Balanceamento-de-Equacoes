@@ -111,14 +111,37 @@ const barraLigacao = new THREE.CylinderGeometry(.075, .075, 1, 12);
 const materiais = {};
 const material = el => materiais[el] ??= new THREE.MeshPhongMaterial({ color: CORES[el] ?? 0xffaa77, shininess: 90, specular: 0x444444 });
 const materialLigacao = new THREE.MeshPhongMaterial({ color: 0xd1d5db, shininess: 70, specular: 0x555555 });
-const assinatura = c => JSON.stringify(Object.entries(c).sort());
+const EN = { H: 2.2, C: 2.55, S: 2.58, N: 3.04, Cl: 3.16, O: 3.44 }; // metais ficam com ~1
+const VALENCIA = { H: 1, C: 4, N: 5, O: 6, S: 6, Cl: 7, Na: 1, K: 1, Mg: 2, Ca: 2, Al: 3, Fe: 3 };
+const t = 1 / Math.sqrt(3);
+const DIRECOES = { // linear, trigonal plana, tetraédrica (primeiras posições usadas pelos ligantes)
+    1: [[1, 0, 0]], 2: [[1, 0, 0], [-1, 0, 0]],
+    3: [[1, 0, 0], [-.5, .866, 0], [-.5, -.866, 0]],
+    4: [[t, t, t], [-t, -t, t], [-t, t, -t], [t, -t, -t]],
+};
+const assinatura =c => JSON.stringify(Object.entries(c).sort());
 
 // Usa as coordenadas do PubChem; se faltar (sem internet / sem registro) monta um aglomerado simples.
 function geometria(f, dados) {
     if (dados?.atomos && assinatura(contarAtomos(dados.atomos.map(a => a[0]).join(''))) === assinatura(contarAtomos(f))) {
         return { atomos: dados.atomos, ligacoes: dados.ligacoes || [] };
     }
-    const els = Object.entries(contarAtomos(f)).flatMap(([el, n]) => Array(n).fill(el));
+    const cont = contarAtomos(f);
+    const els = Object.entries(cont).flatMap(([el, n]) => Array(n).fill(el));
+    // Átomo central = elemento (não H) que aparece uma vez, o menos eletronegativo (C em CO2, O em H2O)
+    const centro = Object.keys(cont).filter(el => el !== 'H' && cont[el] === 1).sort((a, b) => (EN[a] ?? 1) - (EN[b] ?? 1))[0];
+    if (els.length > 2 && centro) {
+        const ligantes = els.filter((_, i) => i !== els.indexOf(centro));
+        const ordens = ligantes.map(el => el === 'O' && centro !== 'H' ? 2 : 1);
+        // VSEPR: pares isolados = elétrons de valência que sobram / 2 (H2O tem 2 -> angular; CO2 tem 0 -> linear)
+        const pares = Math.max(0, Math.floor(((VALENCIA[centro] ?? 2) - ordens.reduce((s, o) => s + o, 0)) / 2));
+        const dirs = DIRECOES[Math.min(4, ligantes.length + pares)] ?? DIRECOES[4];
+        if (ligantes.length <= dirs.length) return {
+            atomos: [[centro, 0, 0, 0], ...ligantes.map((el, i) => [el, ...dirs[i]])],
+            ligacoes: ligantes.map((_, i) => [0, i + 1, ordens[i]]),
+        };
+    }
+    // shortcut: sem átomo central único (Fe2O3, H2O2...) vira um anel sem ligações; essas vêm do PubChem quando há internet
     return { atomos: els.map((el, i) => i ? [el, Math.cos(2 * Math.PI * i / (els.length - 1)), Math.sin(2 * Math.PI * i / (els.length - 1)), 0] : [el, 0, 0, 0]), ligacoes: [] };
 }
 
