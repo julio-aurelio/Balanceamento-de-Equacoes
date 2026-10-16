@@ -207,7 +207,31 @@ async function pubchemDireto(nome) {
     }
     return null;
 }
-const buscarPubchem = f => cachePubchem[f] ??= pubchemDireto(NOMES[f]?.[1] || f).catch(() => null);
+// Compostos iônicos: o PubChem devolve os íons soltos (Al2O3 vira 5 bolinhas sem ligação) ou nem tem (Fe3O4).
+// Aqui vai a estrutura de livro didático: [elemento, x, y, z] e [átomo a, átomo b, ordem da ligação].
+const cadeiaMO = (M, n) => { // O=M-O-M-...-M=O em zigue-zague (Al2O3, Fe2O3, Fe3O4)
+    const atomos = [], ligacoes = [];
+    for (let i = 0; i <= 2 * n; i++) {
+        atomos.push(i % 2 ? [M, (i - n) * 1.3, 0, 0] : ['O', (i - n) * 1.3, .8, 0]);
+        if (i) ligacoes.push([i - 1, i, i === 1 || i === 2 * n ? 2 : 1]);
+    }
+    return { atomos, ligacoes };
+};
+const CARBONATO = [['C', 0, 0, 0], ['O', 0, 1.25, 0], ['O', -1.08, -.62, 0], ['O', 1.08, -.62, 0]];
+const LIG_CARBONATO = [[0, 1, 2], [0, 2, 1], [0, 3, 1]];
+const TETRA = [[.84, .84, .84], [-.84, -.84, .84], [-.84, .84, -.84], [.84, -.84, -.84]];
+const ESTRUTURAS = {
+    Al2O3: cadeiaMO('Al', 2), Fe2O3: cadeiaMO('Fe', 2), Fe3O4: cadeiaMO('Fe', 3),
+    MgCl2: { atomos: [['Cl', -1.5, 0, 0], ['Mg', 0, 0, 0], ['Cl', 1.5, 0, 0]], ligacoes: [[0, 1, 1], [1, 2, 1]] },
+    CaCO3: { atomos: [...CARBONATO, ['Ca', 0, -1.9, 0]], ligacoes: [...LIG_CARBONATO, [4, 2, 1], [4, 3, 1]] },
+    Na2CO3: { atomos: [...CARBONATO, ['Na', -2.2, -1.25, 0], ['Na', 2.2, -1.25, 0]], ligacoes: [...LIG_CARBONATO, [4, 2, 1], [5, 3, 1]] },
+    NaHCO3: { atomos: [...CARBONATO, ['H', -1.9, -.1, 0], ['Na', 2.2, -1.25, 0]], ligacoes: [...LIG_CARBONATO, [4, 2, 1], [5, 3, 1]] },
+    Na2SO4: { atomos: [['S', 0, 0, 0], ...TETRA.map(p => ['O', ...p]), ['Na', -1.65, 1.65, -1.65], ['Na', 1.65, -1.65, -1.65]],
+        ligacoes: [[0, 1, 2], [0, 2, 2], [0, 3, 1], [0, 4, 1], [5, 3, 1], [6, 4, 1]] },
+    KClO3: { atomos: [['Cl', 0, 0, 0], ...TETRA.slice(0, 3).map(p => ['O', ...p]), ['K', -1.75, 1.75, -1.75]],
+        ligacoes: [[0, 1, 2], [0, 2, 2], [0, 3, 1], [4, 3, 1]] },
+};
+const buscarPubchem = f => cachePubchem[f] ??= ESTRUTURAS[f] ? Promise.resolve(ESTRUTURAS[f]) : pubchemDireto(NOMES[f]?.[1] || f).catch(() => null);
 const modeloDe = f => cacheModelo[f] ??= buscarPubchem(f).then(d => criarModelo(geometria(f, d)));
 
 // ===== CAIXAS 3D =====
@@ -432,10 +456,10 @@ function atualizar() {
 
     if (!tutorial) return;
     mensagem(...{
-        zero: ['Toda substância precisa de pelo menos 1 molécula.', 'cinza'],
-        desbalanceada: ['Ainda não está balanceada. Compare os átomos dos dois lados!', 'cinza'],
-        'nao-simplificada': ['Balanceada! Mas dá para usar números menores.', 'verde'],
-        ok: ['Equação balanceada! Nenhum átomo foi criado nem destruído (Lavoisier).', 'verde'],
+        zero: ['Coloque pelo menos <b>1 molécula</b> de cada substância nas caixas.', 'cinza'],
+        desbalanceada: [`Quase lá! ${diferencas()}`, 'cinza'],
+        'nao-simplificada': ['Balanceada! Mas dá para <b>dividir todos os números</b> e usar menores.', 'verde'],
+        ok: ['<b>Balanceada!</b> Os mesmos átomos dos dois lados: nada foi criado nem destruído (Lavoisier).', 'verde'],
     }[r]);
     // passo do tutorial que espera uma ação: avança sozinho quando o aluno faz
     const passo = estado.passo;
@@ -447,13 +471,13 @@ function desenharContagem() {
     const a = totalLado(esq, estado.coefs[0]), b = totalLado(dir, estado.coefs[1]);
     const max = Math.max(1, ...Object.values(a), ...Object.values(b));
     const barra = (v, cor) => `
-        <div class="flex flex-col items-center justify-end h-28 w-8">
+        <div class="flex flex-col items-center justify-end h-16 md:h-20 w-6">
             <span class="text-xs font-bold">${v}</span>
-            <div class="barra w-full rounded-t-md bg-gradient-to-t ${cor}" style="height:${(v / max) * 92}px"></div>
+            <div class="barra w-full rounded-t-md bg-gradient-to-t ${cor}" style="height:${(v / max) * 75}%"></div>
         </div>`;
     $('contagem').innerHTML = Object.keys({ ...a, ...b }).map(el => {
         const ok = a[el] === b[el];
-        return `<div class="flex flex-col items-center p-2 rounded-xl border ${ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
+        return `<div class="shrink-0 flex flex-col items-center px-2 py-1 rounded-xl border ${ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}">
             <div class="flex items-end gap-1">${barra(a[el] || 0, 'from-purple-600 to-purple-400')}${barra(b[el] || 0, 'from-blue-600 to-blue-400')}</div>
             <div class="mt-1 text-sm font-bold flex items-center gap-1">
                 <span class="w-4 h-4 rounded-full" style="background:radial-gradient(circle at 35% 30%, #fff, ${corCss(el)} 45%, #000 130%)"></span>
@@ -462,6 +486,14 @@ function desenharContagem() {
         </div>`;
     }).join('');
     atualizarIcones();
+}
+
+// Ex.: "O: 4 nos reagentes e 2 nos produtos." -> diz ao aluno exatamente onde mexer
+function diferencas() {
+    const [esq, dir] = estado.eq;
+    const a = totalLado(esq, estado.coefs[0]), b = totalLado(dir, estado.coefs[1]);
+    const erros = Object.keys({ ...a, ...b }).filter(el => a[el] !== b[el]).map(el => `<b>${el}</b>: ${a[el] || 0} nos reagentes e ${b[el] || 0} nos produtos`);
+    return erros.length ? erros.join('; ') + '.' : '';
 }
 
 function mensagem(iconeMensagem, texto, cor, botoes = '') {
@@ -535,15 +567,15 @@ function telaNiveis() {
     document.querySelectorAll('.foco').forEach(el => el.classList.remove('foco'));
     mostrarBancada(false);
     $('telaNivel').innerHTML = `
-        <h2 class="text-2xl md:text-3xl font-bold mb-1">Escolha seu nível</h2>
-        <p class="text-sm text-gray-500 mb-8">5 equações por partida • acertou de primeira = 2 pontos, na segunda = 1 ponto</p>
-        <div class="grid sm:grid-cols-3 gap-5 max-w-3xl mx-auto">
+        <h2 class="text-xl md:text-3xl font-bold mb-1">Escolha seu nível</h2>
+        <p class="text-xs md:text-sm text-gray-500 mb-4 md:mb-8">5 equações por partida • acertou de primeira = 2 pontos, na segunda = 1 ponto</p>
+        <div class="grid grid-cols-3 gap-2 md:gap-5 max-w-3xl w-full mx-auto">
             ${['Fácil', 'Médio', 'Difícil'].map((nome, i) => `
-            <button data-acao="nivel" data-arg="${i}" class="cartao-nivel group p-5 rounded-2xl bg-gradient-to-b from-purple-50 to-blue-50 border-2 border-purple-200 hover:border-purple-500 hover:-translate-y-1 transition">
-                <div class="font-bold text-lg">Nível ${i + 1}</div>
-                <div class="text-xs text-gray-500 mb-3">${nome}</div>
-                <div class="relative w-24 h-20 mx-auto mb-3 group-hover:scale-110 transition">${ICONES[i]}</div>
-                <div class="bg-white rounded-full border border-gray-200 py-1 text-xl tracking-wider">${estrelas(Math.round(recorde(i) / 2))}</div>
+            <button data-acao="nivel" data-arg="${i}" class="cartao-nivel group p-2 md:p-5 rounded-2xl bg-gradient-to-b from-purple-50 to-blue-50 border-2 border-purple-200 hover:border-purple-500 hover:-translate-y-1 transition">
+                <div class="font-bold text-base md:text-lg">Nível ${i + 1}</div>
+                <div class="text-xs text-gray-500 mb-1 md:mb-3">${nome}</div>
+                <div class="relative w-24 h-20 mx-auto mb-2 md:mb-3 scale-75 md:scale-100 group-hover:scale-110 transition">${ICONES[i]}</div>
+                <div class="bg-white rounded-full border border-gray-200 py-1 text-sm md:text-xl tracking-wider">${estrelas(Math.round(recorde(i) / 2))}</div>
             </button>`).join('')}
         </div>`;
     atualizarIcones();
@@ -562,7 +594,7 @@ function proximaEquacao() {
     Object.assign(j, { tentativas: 0, fase: 'jogando' });
     barraJogo();
     carregarEquacao(j.fila[j.idx], 0);
-    pedirVerificacao('Balanceie a equação e clique em Verificar.');
+    pedirVerificacao('Deixe o <b>mesmo número de cada átomo</b> dos dois lados e clique em Verificar.');
 }
 
 const pedirVerificacao = texto => mensagem('flask-conical', texto, 'cinza', `<button data-acao="verificar" class="${BTN} inline-flex items-center gap-2">${icone('check', 'w-5 h-5')}Verificar</button>`);
@@ -588,11 +620,11 @@ function verificar() {
         j.pontos += ganhou;
         confete();
         j.fase = 'certo';
-        mensagem('smile', `Correto! +${ganhou} ponto${ganhou > 1 ? 's' : ''}`, 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
+        mensagem('smile', `${j.tentativas === 1 ? 'Perfeito, de primeira!' : 'Acertou na segunda!'} <b>+${ganhou} ponto${ganhou > 1 ? 's' : ''}</b>`, 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
     } else {
-        const motivo = { zero: 'Nenhum coeficiente pode ser zero.', 'nao-simplificada': 'Está balanceada, mas use os MENORES números possíveis.' }[r] || 'Ainda não está balanceada.';
+        const motivo = { zero: 'Toda substância precisa de pelo menos 1 molécula.', 'nao-simplificada': 'Está balanceada, mas dá para <b>dividir todos os números</b> e usar menores.' }[r] || 'Ainda não está balanceada. ' + diferencas();
         j.fase = 'errado';
-        mensagem(j.tentativas === 1 ? 'circle-help' : 'frown', motivo + (j.tentativas === 1 ? ' Veja a contagem e tente de novo!' : ' Não foi dessa vez.'), 'vermelho',
+        mensagem(j.tentativas === 1 ? 'circle-help' : 'frown', motivo + (j.tentativas === 1 ? ' Ajuste e tente de novo!' : ' Não foi dessa vez, veja a resposta.'), 'vermelho',
             j.tentativas === 1 ? `<button data-acao="tentar" class="${BTN} inline-flex items-center gap-2">${icone('rotate-ccw', 'w-5 h-5')}Tentar de novo</button>` : `<button data-acao="resposta" class="${BTN} inline-flex items-center gap-2">${icone('eye', 'w-5 h-5')}Mostrar resposta</button>`);
     }
     barraJogo();
@@ -606,11 +638,11 @@ function fimDeJogo() {
     estado.jogo = null;
     mostrarBancada(false);
     $('telaNivel').innerHTML = `
-        <div class="mb-3 pop flex justify-center ${j.pontos === 10 ? 'text-yellow-500' : j.pontos >= 6 ? 'text-purple-600' : 'text-blue-600'}">${icone(j.pontos === 10 ? 'trophy' : j.pontos >= 6 ? 'party-popper' : 'dumbbell', 'w-16 h-16')}</div>
+        <div class="mb-3 pop flex justify-center ${j.pontos === 10 ? 'text-yellow-500' : j.pontos >= 6 ? 'text-purple-600' : 'text-blue-600'}">${icone(j.pontos === 10 ? 'trophy' : j.pontos >= 6 ? 'party-popper' : 'dumbbell', 'w-12 h-12 md:w-16 md:h-16')}</div>
         <h2 class="text-2xl font-bold">Nível ${j.nivel + 1} concluído!</h2>
-        <div class="text-4xl my-3 tracking-wider">${estrelas(Math.round(j.pontos / 2))}</div>
+        <div class="text-3xl md:text-4xl my-2 md:my-3 tracking-wider">${estrelas(Math.round(j.pontos / 2))}</div>
         <p class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">${j.pontos} / 10 pontos</p>
-        <p class="text-sm text-gray-500 mt-1 mb-6 inline-flex items-center gap-1">${icone('timer', 'w-4 h-4')}Tempo: ${tempo}</p>
+        <p class="text-sm text-gray-500 mt-1 mb-4 md:mb-6 inline-flex self-center items-center gap-1">${icone('timer', 'w-4 h-4')}Tempo: ${tempo}</p>
         <div class="flex justify-center gap-2">
             <button data-acao="nivel" data-arg="${j.nivel}" class="${BTN} inline-flex items-center gap-2">${icone('rotate-ccw', 'w-5 h-5')}Jogar de novo</button>
             <button data-acao="niveis" class="${BTN2} inline-flex items-center gap-2">${icone('corner-up-left', 'w-4 h-4')}Níveis</button>
@@ -638,12 +670,12 @@ const ACOES = {
     nivel: n => iniciarJogo(+n),
     niveis: telaNiveis,
     verificar,
-    tentar: () => { estado.jogo.fase = 'jogando'; atualizar(); pedirVerificacao('Ajuste os coeficientes e verifique de novo.'); },
+    tentar: () => { estado.jogo.fase = 'jogando'; atualizar(); pedirVerificacao('Mude a quantidade de moléculas e verifique de novo.'); },
     resposta: () => {
         estado.coefs = estado.eq.map(l => l.map(m => m.resposta));
         estado.jogo.fase = 'resposta';
         atualizar();
-        mensagem('badge-check', 'Esta é a resposta certa. Confira a contagem!', 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
+        mensagem('badge-check', 'Esta é a resposta certa. Repare que cada átomo aparece igual nos dois lados.', 'verde', `<button data-acao="proxima" class="${BTN} inline-flex items-center gap-2">Próxima ${icone('arrow-right', 'w-5 h-5')}</button>`);
     },
     proxima: () => { estado.jogo.idx++; proximaEquacao(); },
     coef: arg => mudarCoef(...arg.split(',').map(Number)),

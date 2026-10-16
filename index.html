@@ -23,7 +23,7 @@
                 radial-gradient(circle at 15% 0%, #6d28d955, transparent 45%), radial-gradient(circle at 90% 100%, #2563eb44, transparent 45%),
                 #050510;
             background-attachment: fixed;
-            min-height: 100vh;
+            height: 100vh; height: 100dvh; overflow: hidden;
         }
         /* tipografia do site Arlyze: Space Grotesk nos títulos/botões, Inter no texto, Fira Code nos números */
         h1, h2, h3, button, .font-game { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.01em; }
@@ -56,12 +56,12 @@
         .bola { position: absolute; border-radius: 50%; box-shadow: inset -4px -6px 10px rgba(0,0,0,.35); }
     </style>
 </head>
-<body class="text-gray-800 p-3 md:p-6">
-<div class="max-w-6xl mx-auto space-y-4">
+<body class="text-gray-800 p-2 md:p-4">
+<div class="max-w-6xl mx-auto h-full flex flex-col gap-2 md:gap-3">
 
     <!-- Cabeçalho -->
-    <header class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 p-4 md:p-5 flex flex-wrap items-center gap-3">
-        <img src="arly.png" alt="Arly" class="w-14 h-14 shrink-0 object-contain drop-shadow-md">
+    <header class="shrink-0 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200 px-4 py-2 md:py-3 flex flex-wrap items-center gap-3">
+        <img src="arly.png" alt="Arly" class="w-10 h-10 md:w-12 md:h-12 shrink-0 object-contain drop-shadow-md">
         <div>
             <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Balanceamento de Equações</h1>
             <p class="text-xs text-gray-500">PubChem API | Moléculas 3D | Cores CPK</p>
@@ -73,46 +73,46 @@
     </header>
 
     <!-- Seleção de nível / fim de jogo -->
-    <section id="telaNivel" hidden class="bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-6 md:p-10 text-center"></section>
+    <section id="telaNivel" hidden class="flex-1 min-h-0 overflow-hidden flex-col justify-center bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-3 md:p-6 text-center [&:not([hidden])]:flex"></section>
 
     <!-- Bancada (intro e jogo) -->
-    <section id="bancada" class="bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-4 md:p-6">
-        <div id="barraTopo" class="flex flex-wrap items-center gap-2 mb-4"></div>
+    <section id="bancada" class="flex-1 min-h-0 flex flex-col bg-white/95 rounded-2xl shadow-2xl border border-gray-200 p-3 md:p-4">
+        <div id="barraTopo" class="shrink-0 flex flex-wrap items-center gap-2 mb-2"></div>
 
 
-        <div>
-            <div class="grid grid-cols-[1fr_3.5rem_1fr] md:grid-cols-[1fr_6rem_1fr] gap-y-3 items-center">
+        <!-- Mensagem / botões (verificar, tentar de novo, próxima...) -->
+        <div id="acoes" class="shrink-0 mb-2"></div>
+
+        <div class="flex-1 min-h-0">
+            <div class="h-full grid grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto] gap-y-2 items-center">
                 <!-- Caixas 3D -->
-                <div class="caixa relative h-64 md:h-80 bg-[#050510] rounded-2xl border-2 border-purple-500/40 shadow-inner overflow-hidden" id="caixa0">
+                <div class="caixa relative h-full min-h-[8rem] bg-[#050510] rounded-2xl border-2 border-purple-500/40 shadow-inner overflow-hidden" id="caixa0">
                     <span class="absolute top-2 left-3 text-xs font-semibold text-purple-200/80 z-10 pointer-events-none">REAGENTES</span>
                 </div>
                 <div id="seta" class="flex justify-center"></div>
-                <div class="caixa relative h-64 md:h-80 bg-[#050510] rounded-2xl border-2 border-blue-500/40 shadow-inner overflow-hidden" id="caixa1">
+                <div class="caixa relative h-full min-h-[8rem] bg-[#050510] rounded-2xl border-2 border-blue-500/40 shadow-inner overflow-hidden" id="caixa1">
                     <span class="absolute top-2 left-3 text-xs font-semibold text-blue-200/80 z-10 pointer-events-none">PRODUTOS</span>
                 </div>
 
                 <!-- Equação com os seletores, alinhada embaixo das caixas -->
-                <div id="lado0" class="flex"></div>
+                <div id="lado0" class="flex min-w-0 overflow-hidden"></div>
                 <div class="text-center text-3xl md:text-4xl font-bold text-purple-600">→</div>
-                <div id="lado1" class="flex"></div>
+                <div id="lado1" class="flex min-w-0 overflow-hidden"></div>
             </div>
         </div>
 
-        <!-- Mensagem / botões (verificar, tentar de novo, próxima...) -->
-        <div id="acoes" class="mt-5"></div>
 
         <!-- Contagem de átomos -->
-        <div id="contagemBox" class="mt-5 pt-4 border-t border-gray-200">
-            <div class="text-xs font-semibold text-gray-600 mb-3 flex items-center gap-2">
+        <div id="contagemBox" class="shrink-0 mt-2 pt-2 border-t border-gray-200">
+            <div class="text-xs font-semibold text-gray-600 mb-1 flex items-center gap-2">
                 <i data-lucide="scale" class="w-4 h-4"></i> CONTAGEM DE ÁTOMOS
                 <span class="text-[10px] text-gray-400">barra roxa = reagentes • barra azul = produtos</span>
             </div>
-            <div id="contagem" class="flex flex-wrap justify-center gap-3"></div>
+            <div id="contagem" class="flex justify-center gap-2 overflow-x-auto"></div>
         </div>
     </section>
 
-    <p class="text-center text-[10px] text-gray-400">Powered by PubChem API</p>
-</div>
+    </div>
 
 <!-- Tutorial: véu com blur (bloqueia cliques) + caixa de fala do personagem -->
 <div id="veu" hidden class="fixed inset-0 z-40 bg-[#050510]/60 backdrop-blur-sm"></div>
