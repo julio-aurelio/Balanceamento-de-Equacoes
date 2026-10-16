@@ -417,18 +417,18 @@ async function carregarEquacao(s, coefInicial) {
 function desenharEquacao() {
     estado.eq.forEach((lado, l) => {
         $('lado' + l).innerHTML = lado.map((m, i) => `
-            <div class="relative flex-1 flex items-center justify-center gap-1 md:gap-2 py-1">
-                ${i ? '<span class="absolute left-0 -translate-x-1/2 text-2xl md:text-3xl font-bold text-gray-400">+</span>' : ''}
+            <div class="relative flex-1 flex items-center justify-center gap-1 md:gap-2 py-0.5 md:py-1">
+                ${i ? '<span class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 md:left-0 md:top-1/2 md:-translate-y-1/2 text-lg md:text-3xl font-bold text-gray-400 leading-none">+</span>' : ''}
                 <div class="flex flex-col items-center">
-                    <button aria-label="Aumentar coeficiente" data-acao="coef" data-arg="${l},${i},1" class="ctrl w-9 h-6 rounded-t-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30 flex items-center justify-center">${icone('chevron-up', 'w-4 h-4')}</button>
+                    <button aria-label="Aumentar coeficiente" data-acao="coef" data-arg="${l},${i},1" class="ctrl w-8 md:w-9 h-5 md:h-6 rounded-t-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30 flex items-center justify-center">${icone('chevron-up', 'w-4 h-4')}</button>
                     <input data-l="${l}" data-i="${i}" inputmode="numeric" maxlength="2"
-                        class="ctrl coef w-9 md:w-11 h-9 md:h-11 text-center text-xl md:text-2xl font-bold text-purple-700 bg-white border-2 border-purple-200 focus:border-purple-500 outline-none">
-                    <button aria-label="Diminuir coeficiente" data-acao="coef" data-arg="${l},${i},-1" class="ctrl w-9 h-6 rounded-b-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30 flex items-center justify-center">${icone('chevron-down', 'w-4 h-4')}</button>
+                        class="ctrl coef w-8 md:w-11 h-8 md:h-11 text-center text-lg md:text-2xl font-bold text-purple-700 bg-white border-2 border-purple-200 focus:border-purple-500 outline-none">
+                    <button aria-label="Diminuir coeficiente" data-acao="coef" data-arg="${l},${i},-1" class="ctrl w-8 md:w-9 h-5 md:h-6 rounded-b-lg bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs disabled:opacity-30 flex items-center justify-center">${icone('chevron-down', 'w-4 h-4')}</button>
                 </div>
                 <div data-l="${l}" data-i="${i}" title="Arraste para a caixa para adicionar"
-                    class="arrastavel leading-tight px-2 py-1 rounded-xl border-2 border-dashed border-transparent hover:border-purple-300 hover:bg-purple-50 cursor-grab touch-none select-none transition">
+                    class="arrastavel min-w-0 leading-tight px-1 md:px-2 py-1 rounded-xl border-2 border-dashed border-transparent hover:border-purple-300 hover:bg-purple-50 cursor-grab touch-none select-none transition">
                     <div class="text-lg md:text-3xl font-bold">${sub(m.f)}</div>
-                    <div class="text-[10px] md:text-xs text-gray-500 flex items-center gap-1">${NOMES[m.f][0]} ${icone('hand', 'w-3.5 h-3.5 text-purple-400')}</div>
+                    <div class="hidden sm:flex text-[10px] md:text-xs text-gray-500 items-center gap-1">${NOMES[m.f][0]} ${icone('hand', 'w-3.5 h-3.5 text-purple-400')}</div>
                 </div>
             </div>`).join('');
     });
@@ -604,11 +604,11 @@ setInterval(() => { if (estado.jogo && $('tempo')) $('tempo').textContent = relo
 function barraJogo() {
     const j = estado.jogo;
     $('barraTopo').innerHTML = `
-        <span class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-semibold">Nível ${j.nivel + 1}</span>
-        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm">Equação <b>${j.idx + 1}</b>/5</span>
-        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm inline-flex items-center gap-1">${icone('trophy', 'w-4 h-4 text-yellow-600')}<b>${j.pontos}</b> pts</span>
-        <span class="px-3 py-1.5 rounded-xl bg-gray-100 text-sm inline-flex items-center gap-1">${icone('timer', 'w-4 h-4')}<b id="tempo">${relogio()}</b></span>
-        <button data-acao="niveis" class="${BTN2} ml-auto inline-flex items-center gap-2">${icone('corner-up-left', 'w-4 h-4')}Níveis</button>`;
+        <span class="px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs md:text-sm font-semibold">Nível ${j.nivel + 1}</span>
+        <span class="px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-gray-100 text-xs md:text-sm">Equação <b>${j.idx + 1}</b>/5</span>
+        <span class="px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-gray-100 text-xs md:text-sm inline-flex items-center gap-1">${icone('trophy', 'w-4 h-4 text-yellow-600')}<b>${j.pontos}</b> pts</span>
+        <span class="px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-gray-100 text-xs md:text-sm inline-flex items-center gap-1">${icone('timer', 'w-4 h-4')}<b id="tempo">${relogio()}</b></span>
+        <button data-acao="niveis" class="${BTN2} ml-auto hidden sm:inline-flex items-center gap-2">${icone('corner-up-left', 'w-4 h-4')}Níveis</button>`;
     atualizarIcones();
 }
 
